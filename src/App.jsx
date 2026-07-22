@@ -135,7 +135,10 @@ function App() {
   const [isWhitepaperOpen, setIsWhitepaperOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -938,30 +941,63 @@ function App() {
       {isLoginOpen && (
         <div className="auth-page-section">
           <div className="auth-page-card">
-            <button className="auth-page-close" onClick={() => setIsLoginOpen(false)} aria-label="Close">&times;</button>
-            
-            {/* Auth Tab Switcher */}
-            <div className="auth-tabs">
-              <button 
-                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} 
-                onClick={() => { setAuthMode('login'); setAuthError(''); }}
-              >
-                Sign In
-              </button>
-              <button 
-                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`} 
-                onClick={() => { setAuthMode('register'); setAuthError(''); }}
-              >
-                Sign Up
-              </button>
+            {/* Left side: Branding Info Panel (Only visible on larger screens) */}
+            <div className="auth-brand-side">
+              <div className="auth-brand-logo">
+                <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                  <path d="M16 2L29.8564 10V22L16 30L2.14359 22V10L16 2Z" fill="url(#auth-logo-grad)" stroke="#ff2c8c" strokeWidth="2"/>
+                  <circle cx="16" cy="16" r="6" fill="#ffffff" />
+                  <defs>
+                    <linearGradient id="auth-logo-grad" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#3283ff"/>
+                      <stop offset="1" stopColor="#ff2c8c"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span>ICOLand</span>
+              </div>
+              <div className="auth-brand-info">
+                <h2>Powering Data For The New Equity Blockchain.</h2>
+                <p>Buy, sell, and track your cryptographic tokens in real-time. Join the decentralization movement with robust features and premium performance.</p>
+              </div>
+              <div className="auth-brand-stats">
+                <div className="auth-stat-item">
+                  <span className="auth-stat-num">75% OFF</span>
+                  <span className="auth-stat-lbl">Crowdsale Discount</span>
+                </div>
+                <div className="auth-stat-item">
+                  <span className="auth-stat-num">12 Days</span>
+                  <span className="auth-stat-lbl">Time Remaining</span>
+                </div>
+              </div>
             </div>
 
-            <h2 className="auth-page-title">{authMode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
-            <p className="auth-page-desc">
-              {authMode === 'login' 
-                ? 'Access your dashboard and manage your token investments.' 
-                : 'Start purchasing and selling your tokens securely.'}
-            </p>
+            {/* Right side: Form Panel */}
+            <div className="auth-form-side">
+              <button className="auth-page-close" onClick={() => setIsLoginOpen(false)} aria-label="Close">&times;</button>
+              
+              {/* Auth Tab Switcher */}
+              <div className="auth-tabs">
+                <button 
+                  className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} 
+                  onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                >
+                  Sign In
+                </button>
+                <button 
+                  className={`auth-tab ${authMode === 'register' ? 'active' : ''}`} 
+                  onClick={() => { setAuthMode('register'); setAuthError(''); }}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              <h2 className="auth-page-title">{authMode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+              <p className="auth-page-desc">
+                {authMode === 'login' 
+                  ? 'Access your dashboard and manage your token investments.' 
+                  : 'Start purchasing and selling your tokens securely.'}
+              </p>
             
             <form 
               className="login-form" 
@@ -990,7 +1026,9 @@ function App() {
                     
                     const data = await res.json();
                     if (res.ok) {
-                      setLoggedInUser({ name: formData.name, email: formData.email });
+                      const userObj = { name: formData.name, email: formData.email };
+                      setLoggedInUser(userObj);
+                      localStorage.setItem('user', JSON.stringify(userObj));
                       setIsLoginOpen(false);
                     } else {
                       setAuthError(data.error || 'Registration failed');
@@ -1012,7 +1050,9 @@ function App() {
                     
                     const data = await res.json();
                     if (res.ok) {
-                      setLoggedInUser({ name: data.user.name, email: data.user.email });
+                      const userObj = { name: data.user.name, email: data.user.email };
+                      setLoggedInUser(userObj);
+                      localStorage.setItem('user', JSON.stringify(userObj));
                       setIsLoginOpen(false);
                     } else {
                       setAuthError(data.error || 'Login failed');
@@ -1125,6 +1165,7 @@ function App() {
                 </>
               )}
             </div>
+            </div> {/* End auth-form-side */}
           </div>
         </div>
       )}
@@ -1152,6 +1193,7 @@ function App() {
                 className="confirm-logout-btn" 
                 onClick={() => {
                   setLoggedInUser(null);
+                  localStorage.removeItem('user');
                   setIsLogoutModalOpen(false);
                   setIsDashboardOpen(false);
                 }}
