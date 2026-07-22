@@ -19,8 +19,7 @@ const dbName = process.env.MONGODB_NAME || 'icoland';
 const rawURI = process.env.MONGODB_URI;
 
 if (!rawURI) {
-  console.error('❌ MONGODB_URI is not defined in .env');
-  process.exit(1);
+  throw new Error('❌ MONGODB_URI is not defined. Make sure you set it in Vercel Environment Variables.');
 }
 
 // Inject database name only if not already present in the URI.
@@ -55,8 +54,9 @@ mongoose
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
+    // Don't crash Vercel lambda on initial failed connection, let individual requests report the state
   });
+
 
 // Routes
 // 1. User Signup
@@ -148,7 +148,11 @@ app.delete('/api/debug/user/:email', async (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Express server is running on port ${PORT}`);
-});
+// Start Server only if NOT running as a Vercel serverless function
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Express server is running on port ${PORT}`);
+  });
+}
+
+export default app;
