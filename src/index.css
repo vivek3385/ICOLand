@@ -2043,7 +2043,7 @@ body {
   }
 
   .page-content-wrapper.auth-open {
-    display: block;
+    display: none;
   }
 }
 
