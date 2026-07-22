@@ -148,7 +148,11 @@ app.delete('/api/debug/user/:email', async (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Express server is running on port ${PORT}`);
-});
+// Start Server only if NOT running as a Vercel serverless function
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Express server is running on port ${PORT}`);
+  });
+}
+
+export default app;
