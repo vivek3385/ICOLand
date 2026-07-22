@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, LogOut } from 'lucide-react';
 
 function CountUp({ target, suffix, duration = 2000, decimals = false }) {
   const [count, setCount] = useState(0);
@@ -133,6 +133,46 @@ function App() {
   const [activeSection, setActiveSection] = useState('why-ico');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isWhitepaperOpen, setIsWhitepaperOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    let key = id.replace('modal-', '');
+    // Convert kebab-case to camelCase (e.g., "confirm-password" → "confirmPassword")
+    key = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  useEffect(() => {
+    if (!isLoginOpen) {
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+      });
+    }
+  }, [isLoginOpen]);
+
+  const openAuthModal = (mode = 'login') => {
+    setAuthMode(mode);
+    setIsLoginOpen(true);
+  };
   const approvals = [
     "WHAT IS APPROVING",
     "DECENTRALIZED RIGHTS",
@@ -144,6 +184,7 @@ function App() {
 
   const handleNavClick = (sectionId) => {
     setActiveSection(sectionId);
+    setIsMobileMenuOpen(false);
     isScrollingRef.current = true;
     setTimeout(() => {
       isScrollingRef.current = false;
@@ -195,10 +236,18 @@ function App() {
       
       {/* Animated Network Wave */}
       <div className="network-wave"></div>
+      
+      {/* Mobile Menu Backdrop Overlay */}
+      {isMobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
+      {/* Page content wrapper - hidden when auth is open on desktop/tablet */}
+      <div className={`page-content-wrapper ${isLoginOpen ? 'auth-open' : ''}`}>
 
       {/* Header */}
-      <header className="header">
-        <a href="#why-ico" className="logo" style={{ textDecoration: 'none' }}>
+      <header className={`header ${isMobileMenuOpen ? 'mobile-menu-active' : ''}`}>
+        <a href="#why-ico" className="logo" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
           {/* Hexagonal glowing logo icon */}
           <span className="logo-icon">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -215,7 +264,7 @@ function App() {
           <span className="logo-text">ICOLand</span>
         </a>
 
-        <nav>
+        <nav className={`nav-container ${isMobileMenuOpen ? 'open' : ''}`}>
           <ul className="nav-links">
             <li><a href="#about" className={activeSection === 'about' ? 'active' : ''} onClick={() => handleNavClick('about')}>About</a></li>
             <li><a href="#why-ico" className={activeSection === 'why-ico' ? 'active' : ''} onClick={() => handleNavClick('why-ico')}>Why ICO</a></li>
@@ -227,7 +276,40 @@ function App() {
           </ul>
         </nav>
 
-        <button className="login-btn" onClick={() => setIsLoginOpen(true)}>LOGIN</button>
+        <div className="header-actions">
+          {loggedInUser ? (
+            <div className="user-pill" onClick={() => setIsDashboardOpen(true)}>
+              <div className="user-avatar">
+                {loggedInUser.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="user-name">{loggedInUser.name}</span>
+              <button 
+                className="logout-btn" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLogoutModalOpen(true);
+                }}
+                title="Logout"
+              >
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <button className="login-btn" onClick={() => { openAuthModal('login'); setIsMobileMenuOpen(false); }}>LOGIN</button>
+          )}
+          
+          {/* Hamburger Menu Toggle */}
+          <button 
+            className={`menu-toggle ${isMobileMenuOpen ? 'active' : ''}`} 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle Navigation Menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
       </header>
 
       {/* Hero Section */}
@@ -249,7 +331,7 @@ function App() {
             The platform helps investors to make easy to purchase and sell their tokens
           </p>
 
-          <button className="cta-btn" onClick={() => setIsLoginOpen(true)}>
+          <button className="cta-btn" onClick={() => openAuthModal('register')}>
             REGISTER & BUY TOKEN NOW
             <span className="arrow-circle">
               <Play size={12} fill="#ff2c8c" stroke="#ff2c8c" style={{ marginLeft: '2px', transform: 'rotate(0deg)' }} />
@@ -460,7 +542,7 @@ function App() {
           <p className="section-desc-center">
             IcoCoin is a public blockchain protocol deploying a suite of algorithmic decentralized stablecoins which underpin a thriving ecosystem that brings DeFi to the masses.
           </p>
-          <button className="buy-token-btn" onClick={() => setIsLoginOpen(true)}>BUY TOKEN NOW</button>
+          <button className="buy-token-btn" onClick={() => openAuthModal('register')}>BUY TOKEN NOW</button>
         </div>
 
         {/* Horizontal Banner Card */}
@@ -725,7 +807,7 @@ function App() {
             </p>
             
             <div className="music-btn-row">
-              <button className="music-buy-btn" onClick={() => setIsLoginOpen(true)}>BUY TOKEN</button>
+              <button className="music-buy-btn" onClick={() => openAuthModal('register')}>BUY TOKEN</button>
               <button className="music-paper-btn" onClick={() => setIsWhitepaperOpen(true)}>WHITE PAPER</button>
             </div>
 
@@ -849,35 +931,526 @@ function App() {
         </div>
       </section>
 
-      {/* Login Modal Overlay */}
+      </div>
+      {/* End page-content-wrapper */}
+
+      {/* Authentication Section - page section below navbar */}
+      {isLoginOpen && (
+        <div className="auth-page-section">
+          <div className="auth-page-card">
+            <button className="auth-page-close" onClick={() => setIsLoginOpen(false)} aria-label="Close">&times;</button>
+            
+            {/* Auth Tab Switcher */}
+            <div className="auth-tabs">
+              <button 
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} 
+                onClick={() => { setAuthMode('login'); setAuthError(''); }}
+              >
+                Sign In
+              </button>
+              <button 
+                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`} 
+                onClick={() => { setAuthMode('register'); setAuthError(''); }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <h2 className="auth-page-title">{authMode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+            <p className="auth-page-desc">
+              {authMode === 'login' 
+                ? 'Access your dashboard and manage your token investments.' 
+                : 'Start purchasing and selling your tokens securely.'}
+            </p>
+            
+            <form 
+              className="login-form" 
+              onSubmit={async (e) => { 
+                e.preventDefault(); 
+                
+                setAuthError('');
+                setAuthLoading(true);
+                if (authMode === 'register') {
+                  if (formData.password !== formData.confirmPassword) {
+                    setAuthError('Passwords do not match');
+                    setAuthLoading(false);
+                    return;
+                  }
+                  
+                  try {
+                    const res = await fetch('/api/signup', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password
+                      })
+                    });
+                    
+                    const data = await res.json();
+                    if (res.ok) {
+                      setLoggedInUser({ name: formData.name, email: formData.email });
+                      setIsLoginOpen(false);
+                    } else {
+                      setAuthError(data.error || 'Registration failed');
+                    }
+                  } catch (err) {
+                    console.error('Registration error:', err);
+                    setAuthError('Could not connect to server. Is the backend running?');
+                  }
+                } else {
+                  try {
+                    const res = await fetch('/api/login', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: formData.email,
+                        password: formData.password
+                      })
+                    });
+                    
+                    const data = await res.json();
+                    if (res.ok) {
+                      setLoggedInUser({ name: data.user.name, email: data.user.email });
+                      setIsLoginOpen(false);
+                    } else {
+                      setAuthError(data.error || 'Login failed');
+                    }
+                  } catch (err) {
+                    console.error('Login error:', err);
+                    setAuthError('Could not connect to server. Is the backend running?');
+                  }
+                }
+                setAuthLoading(false);
+              }}
+            >
+              {authMode === 'register' && (
+                <div className="input-group" style={{ marginBottom: '1.2rem' }}>
+                  <label htmlFor="modal-name">Full Name</label>
+                  <input 
+                    type="text" 
+                    id="modal-name" 
+                    placeholder="John Doe" 
+                    value={formData.name} 
+                    onChange={handleInputChange} 
+                    required 
+                  />
+                </div>
+              )}
+
+              <div className="input-group">
+                <label htmlFor="modal-email">Email Address</label>
+                <input 
+                  type="email" 
+                  id="modal-email" 
+                  placeholder="name@example.com" 
+                  value={formData.email} 
+                  onChange={handleInputChange} 
+                  required 
+                />
+              </div>
+              
+              <div className="input-group" style={{ marginTop: '1.2rem' }}>
+                <label htmlFor="modal-password">Password</label>
+                <input 
+                  type="password" 
+                  id="modal-password" 
+                  placeholder="••••••••" 
+                  value={formData.password} 
+                  onChange={handleInputChange} 
+                  required 
+                />
+              </div>
+
+              {authMode === 'register' && (
+                <div className="input-group" style={{ marginTop: '1.2rem' }}>
+                  <label htmlFor="modal-confirm-password">Confirm Password</label>
+                  <input 
+                    type="password" 
+                    id="modal-confirm-password" 
+                    placeholder="••••••••" 
+                    value={formData.confirmPassword} 
+                    onChange={handleInputChange} 
+                    required 
+                  />
+                </div>
+              )}
+
+              <div className="login-actions">
+                {authMode === 'login' ? (
+                  <>
+                    <label className="remember-me">
+                      <input type="checkbox" /> Remember me
+                    </label>
+                    <a href="#forgot" className="forgot-pass">Forgot Password?</a>
+                  </>
+                ) : (
+                  <label className="remember-me">
+                    <input type="checkbox" required /> I agree to Terms & Conditions
+                  </label>
+                )}
+              </div>
+              
+              {authError && (
+                <div className="auth-error">{authError}</div>
+              )}
+
+              <button 
+                type="submit" 
+                className="login-submit-btn"
+                disabled={authLoading}
+              >
+                {authLoading 
+                  ? (authMode === 'login' ? 'SIGNING IN...' : 'REGISTERING...')
+                  : (authMode === 'login' ? 'SIGN IN' : 'REGISTER NOW')
+                }
+              </button>
+            </form>
+            
+            <div className="login-signup-prompt">
+              {authMode === 'login' ? (
+                <>
+                  Don't have an account?{' '}
+                  <a href="#register" onClick={(e) => { e.preventDefault(); setAuthMode('register'); }}>
+                    Sign Up
+                  </a>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <a href="#login" onClick={(e) => { e.preventDefault(); setAuthMode('login'); }}>
+                    Sign In
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Old Auth Modal - kept for mobile fallback */}
       {isLoginOpen && (
         <div className="modal-overlay" onClick={() => setIsLoginOpen(false)}>
           <div className="login-modal-card" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close-btn" onClick={() => setIsLoginOpen(false)} aria-label="Close modal">&times;</button>
-            <h2>ICOLand Login</h2>
-            <p>Access your dashboard and manage your token investments.</p>
             
-            <form className="login-form" onSubmit={(e) => { e.preventDefault(); setIsLoginOpen(false); }}>
+            {/* Auth Tab Switcher */}
+            <div className="auth-tabs">
+              <button 
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} 
+                onClick={() => { setAuthMode('login'); setAuthError(''); }}
+              >
+                Sign In
+              </button>
+              <button 
+                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`} 
+                onClick={() => { setAuthMode('register'); setAuthError(''); }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <h2>{authMode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+            <p>
+              {authMode === 'login' 
+                ? 'Access your dashboard and manage your token investments.' 
+                : 'Start purchasing and selling your tokens securely.'}
+            </p>
+            
+            <form 
+              className="login-form" 
+              onSubmit={async (e) => { 
+                e.preventDefault(); 
+                
+                setAuthError('');
+                setAuthLoading(true);
+                if (authMode === 'register') {
+                  if (formData.password !== formData.confirmPassword) {
+                    setAuthError('Passwords do not match');
+                    setAuthLoading(false);
+                    return;
+                  }
+                  
+                  try {
+                    const res = await fetch('/api/signup', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password
+                      })
+                    });
+                    
+                    const data = await res.json();
+                    if (res.ok) {
+                      // Auto login after successful signup
+                      setLoggedInUser({ name: formData.name, email: formData.email });
+                      setIsLoginOpen(false);
+                    } else {
+                      setAuthError(data.error || 'Registration failed');
+                    }
+                  } catch (err) {
+                    console.error('Registration error:', err);
+                    setAuthError('Could not connect to server. Is the backend running?');
+                  }
+                } else {
+                  try {
+                    const res = await fetch('/api/login', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: formData.email,
+                        password: formData.password
+                      })
+                    });
+                    
+                    const data = await res.json();
+                    if (res.ok) {
+                      setLoggedInUser({ name: data.user.name, email: data.user.email });
+                      setIsLoginOpen(false);
+                    } else {
+                      setAuthError(data.error || 'Login failed');
+                    }
+                  } catch (err) {
+                    console.error('Login error:', err);
+                    setAuthError('Could not connect to server. Is the backend running?');
+                  }
+                }
+                setAuthLoading(false);
+              }}
+            >
+              {authMode === 'register' && (
+                <div className="input-group" style={{ marginBottom: '1.2rem' }}>
+                  <label htmlFor="modal-name">Full Name</label>
+                  <input 
+                    type="text" 
+                    id="modal-name" 
+                    placeholder="John Doe" 
+                    value={formData.name} 
+                    onChange={handleInputChange} 
+                    required 
+                  />
+                </div>
+              )}
+
               <div className="input-group">
                 <label htmlFor="modal-email">Email Address</label>
-                <input type="email" id="modal-email" placeholder="name@example.com" required />
+                <input 
+                  type="email" 
+                  id="modal-email" 
+                  placeholder="name@example.com" 
+                  value={formData.email} 
+                  onChange={handleInputChange} 
+                  required 
+                />
               </div>
+              
               <div className="input-group" style={{ marginTop: '1.2rem' }}>
                 <label htmlFor="modal-password">Password</label>
-                <input type="password" id="modal-password" placeholder="••••••••" required />
+                <input 
+                  type="password" 
+                  id="modal-password" 
+                  placeholder="••••••••" 
+                  value={formData.password} 
+                  onChange={handleInputChange} 
+                  required 
+                />
               </div>
+
+              {authMode === 'register' && (
+                <div className="input-group" style={{ marginTop: '1.2rem' }}>
+                  <label htmlFor="modal-confirm-password">Confirm Password</label>
+                  <input 
+                    type="password" 
+                    id="modal-confirm-password" 
+                    placeholder="••••••••" 
+                    value={formData.confirmPassword} 
+                    onChange={handleInputChange} 
+                    required 
+                  />
+                </div>
+              )}
+
               <div className="login-actions">
-                <label className="remember-me">
-                  <input type="checkbox" /> Remember me
-                </label>
-                <a href="#forgot" className="forgot-pass">Forgot Password?</a>
+                {authMode === 'login' ? (
+                  <>
+                    <label className="remember-me">
+                      <input type="checkbox" /> Remember me
+                    </label>
+                    <a href="#forgot" className="forgot-pass">Forgot Password?</a>
+                  </>
+                ) : (
+                  <label className="remember-me">
+                    <input type="checkbox" required /> I agree to Terms & Conditions
+                  </label>
+                )}
               </div>
-              <button type="submit" className="login-submit-btn">SIGN IN</button>
+              
+              {authError && (
+                <div className="auth-error">{authError}</div>
+              )}
+
+              <button 
+                type="submit" 
+                className="login-submit-btn"
+                disabled={authLoading}
+              >
+                {authLoading 
+                  ? (authMode === 'login' ? 'SIGNING IN...' : 'REGISTERING...')
+                  : (authMode === 'login' ? 'SIGN IN' : 'REGISTER NOW')
+                }
+              </button>
             </form>
             
             <div className="login-signup-prompt">
-              Don't have an account? <a href="#register">Sign Up</a>
+              {authMode === 'login' ? (
+                <>
+                  Don't have an account?{' '}
+                  <a href="#register" onClick={(e) => { e.preventDefault(); setAuthMode('register'); }}>
+                    Sign Up
+                  </a>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <a href="#login" onClick={(e) => { e.preventDefault(); setAuthMode('login'); }}>
+                    Sign In
+                  </a>
+                </>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {isLogoutModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsLogoutModalOpen(false)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setIsLogoutModalOpen(false)} aria-label="Close">&times;</button>
+            <div className="confirm-icon">
+              <LogOut size={32} />
+            </div>
+            <h2>Logout</h2>
+            <p>Are you sure you want to logout? You will need to sign in again to access your dashboard.</p>
+            <div className="confirm-actions">
+              <button 
+                className="confirm-cancel-btn" 
+                onClick={() => setIsLogoutModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-logout-btn" 
+                onClick={() => {
+                  setLoggedInUser(null);
+                  setIsLogoutModalOpen(false);
+                  setIsDashboardOpen(false);
+                }}
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard Modal */}
+      {isDashboardOpen && (
+        <div className="modal-overlay" onClick={() => setIsDashboardOpen(false)}>
+          <div className="dashboard-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setIsDashboardOpen(false)} aria-label="Close dashboard">&times;</button>
+            
+            <div className="dashboard-header">
+              <div className="dashboard-avatar">
+                {loggedInUser.name.charAt(0).toUpperCase()}
+              </div>
+              <h2>Welcome back, {loggedInUser.name}!</h2>
+              <p className="dashboard-email">{loggedInUser.email}</p>
+            </div>
+
+            <div className="dashboard-stats">
+              <div className="dash-stat-card">
+                <div className="dash-stat-icon" style={{ background: 'rgba(50, 131, 255, 0.15)', color: '#3283ff' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                    <path d="M12 18V6" />
+                  </svg>
+                </div>
+                <div className="dash-stat-info">
+                  <span className="dash-stat-value">2,450</span>
+                  <span className="dash-stat-label">Tokens Owned</span>
+                </div>
+              </div>
+              <div className="dash-stat-card">
+                <div className="dash-stat-icon" style={{ background: 'rgba(255, 44, 140, 0.15)', color: '#ff2c8c' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div className="dash-stat-info">
+                  <span className="dash-stat-value">$12,890</span>
+                  <span className="dash-stat-label">Portfolio Value</span>
+                </div>
+              </div>
+              <div className="dash-stat-card">
+                <div className="dash-stat-icon" style={{ background: 'rgba(139, 43, 255, 0.15)', color: '#8b2bff' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
+                </div>
+                <div className="dash-stat-info">
+                  <span className="dash-stat-value">+18.4%</span>
+                  <span className="dash-stat-label">Profit / Loss</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-activity">
+              <h3>Recent Activity</h3>
+              <div className="activity-list">
+                <div className="activity-item">
+                  <div className="activity-dot" style={{ background: '#3283ff' }}></div>
+                  <div className="activity-info">
+                    <span className="activity-text">Purchased 50 Tokens</span>
+                    <span className="activity-time">2 hours ago</span>
+                  </div>
+                  <span className="activity-amount" style={{ color: '#3283ff' }}>+50</span>
+                </div>
+                <div className="activity-item">
+                  <div className="activity-dot" style={{ background: '#ff2c8c' }}></div>
+                  <div className="activity-info">
+                    <span className="activity-text">Sold 25 Tokens</span>
+                    <span className="activity-time">1 day ago</span>
+                  </div>
+                  <span className="activity-amount" style={{ color: '#ff2c8c' }}>-25</span>
+                </div>
+                <div className="activity-item">
+                  <div className="activity-dot" style={{ background: '#8b2bff' }}></div>
+                  <div className="activity-info">
+                    <span className="activity-text">Staking Rewards Claimed</span>
+                    <span className="activity-time">3 days ago</span>
+                  </div>
+                  <span className="activity-amount" style={{ color: '#8b2bff' }}>+12.5</span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              className="dashboard-logout-btn"
+              onClick={() => {
+                setIsDashboardOpen(false);
+                setIsLogoutModalOpen(true);
+              }}
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
           </div>
         </div>
       )}
