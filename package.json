@@ -1,0 +1,30 @@
+{
+  "name": "icoLand",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.25.0",
+    "mongoose": "^9.8.0",
+    "next": "^15.5.21",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "oxlint": "^1.71.0",
+    "typescript": "5.8.2"
+  }
+}

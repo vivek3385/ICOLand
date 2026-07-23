@@ -1,0 +1,6 @@
+# Redirect all API requests to the Express backend server.
+# When you deploy your backend on Render, Railway, or Heroku, 
+# replace "http://127.0.0.1:5000" with your deployed backend URL.
+# Example: /api/*  https://icoland-backend.onrender.com/api/:splat  200
+
+/api/*  http://127.0.0.1:5000/api/:splat  200
